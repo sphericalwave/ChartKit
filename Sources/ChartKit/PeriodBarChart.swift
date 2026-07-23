@@ -1,0 +1,142 @@
+import SwiftUI
+import Charts
+
+/// A `Section`-ready bar chart switchable across day/week/month/quarter/year,
+/// via a segmented picker. One bar per `ChartPoint`; the day scale plots
+/// against real dates (so `chartXAxis` can show narrow weekday letters),
+/// the coarser scales plot against short categorical labels (see
+/// `PeriodBarLabeler`) since a date string doesn't stay readable once a
+/// chart has more than a handful of bars.
+///
+/// Scales with fewer than `minimumPoints` are hidden from the picker
+/// entirely — a single bar has no shape to show.
+public struct PeriodBarChart: View {
+
+    /// Data for every scale the chart can switch to. Scales with no data
+    /// (or too little to plot) are simply absent from the picker.
+    public struct DataSet {
+        public var day: [ChartPoint]
+        public var week: [ChartPoint]
+        public var month: [ChartPoint]
+        public var quarter: [ChartPoint]
+        public var year: [ChartPoint]
+
+        public init(
+            day: [ChartPoint] = [],
+            week: [ChartPoint] = [],
+            month: [ChartPoint] = [],
+            quarter: [ChartPoint] = [],
+            year: [ChartPoint] = []
+        ) {
+            self.day = day
+            self.week = week
+            self.month = month
+            self.quarter = quarter
+            self.year = year
+        }
+
+        func points(for scale: ChartTimeframe) -> [ChartPoint] {
+            switch scale {
+            case .day:     return day
+            case .week:    return week
+            case .month:   return month
+            case .quarter: return quarter
+            case .year:    return year
+            }
+        }
+    }
+
+    private let data: DataSet
+    @Binding private var selection: ChartTimeframe
+    private let minimumPoints: Int
+    private let emptyTitle: String
+    private let emptyMessage: String
+
+    public init(
+        data: DataSet,
+        selection: Binding<ChartTimeframe>,
+        minimumPoints: Int = 2,
+        emptyTitle: String = "Avg plays",
+        emptyMessage: String = "Not enough data yet."
+    ) {
+        self.data = data
+        self._selection = selection
+        self.minimumPoints = minimumPoints
+        self.emptyTitle = emptyTitle
+        self.emptyMessage = emptyMessage
+    }
+
+    private var availableScales: [ChartTimeframe] {
+        ChartTimeframe.allCases.filter { data.points(for: $0).count >= minimumPoints }
+    }
+
+    public var body: some View {
+        let scales = availableScales
+        Section {
+            if scales.isEmpty {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(emptyTitle)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    Text(emptyMessage)
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                        .frame(maxWidth: .infinity, minHeight: 120)
+                }
+                .padding(.vertical, 4)
+            } else {
+                // The persisted selection can outlive its data (e.g. yearly
+                // picked, then history trimmed) — fall back to the widest
+                // scale still available.
+                let scale = scales.contains(selection) ? selection : scales[0]
+                let points = data.points(for: scale)
+                let avg = points.isEmpty ? 0 : points.reduce(0) { $0 + $1.value } / Double(points.count)
+                let maxValue = max(points.map(\.value).max() ?? 0, 1)
+                VStack(alignment: .leading, spacing: 8) {
+                    HStack {
+                        Text(scale.title)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                        Spacer()
+                        Text("avg \(avg, specifier: "%.1f")")
+                            .font(.caption.monospacedDigit())
+                            .foregroundStyle(.secondary)
+                    }
+                    chart(points: points, scale: scale, maxValue: maxValue)
+                    Picker("Timeframe", selection: $selection) {
+                        ForEach(scales) { s in
+                            Text(s.short).tag(s)
+                        }
+                    }
+                    .pickerStyle(.segmented)
+                }
+                .padding(.vertical, 4)
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func chart(points: [ChartPoint], scale: ChartTimeframe, maxValue: Double) -> some View {
+        if scale == .day {
+            Chart(points, id: \.start) { p in
+                BarMark(x: .value("Day", p.start, unit: .day), y: .value("Value", p.value))
+                    .foregroundStyle(Color.accentColor)
+            }
+            .frame(height: 160)
+            .chartYScale(domain: 0...maxValue * 1.15)
+            .chartXAxis {
+                AxisMarks(values: .stride(by: .day)) { _ in
+                    AxisValueLabel(format: .dateTime.weekday(.narrow), centered: true)
+                }
+            }
+        } else {
+            Chart(Array(points.enumerated()), id: \.offset) { index, p in
+                let label = PeriodBarLabeler.label(for: p, index: index, scale: scale)
+                BarMark(x: .value("Period", label), y: .value("Value", p.value))
+                    .foregroundStyle(Color.accentColor)
+            }
+            .frame(height: 160)
+            .chartYScale(domain: 0...maxValue * 1.15)
+        }
+    }
+}

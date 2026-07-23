@@ -48,6 +48,7 @@ public struct PeriodBarChart: View {
 
     private let data: DataSet
     @Binding private var selection: ChartTimeframe
+    private let isLoading: Bool
     private let minimumPoints: Int
     private let emptyTitle: String
     private let emptyMessage: String
@@ -55,12 +56,14 @@ public struct PeriodBarChart: View {
     public init(
         data: DataSet,
         selection: Binding<ChartTimeframe>,
+        isLoading: Bool = false,
         minimumPoints: Int = 2,
         emptyTitle: String = "Avg plays",
         emptyMessage: String = "Not enough data yet."
     ) {
         self.data = data
         self._selection = selection
+        self.isLoading = isLoading
         self.minimumPoints = minimumPoints
         self.emptyTitle = emptyTitle
         self.emptyMessage = emptyMessage
@@ -73,7 +76,19 @@ public struct PeriodBarChart: View {
     public var body: some View {
         let scales = availableScales
         Section {
-            if scales.isEmpty {
+            if isLoading {
+                VStack(alignment: .leading, spacing: 8) {
+                    ProgressView()
+                        .frame(maxWidth: .infinity, minHeight: 160)
+                    Picker("Timeframe", selection: $selection) {
+                        ForEach(ChartTimeframe.allCases) { s in
+                            Text(s.short).tag(s)
+                        }
+                    }
+                    .pickerStyle(.segmented)
+                }
+                .padding(.vertical, 4)
+            } else if scales.isEmpty {
                 VStack(alignment: .leading, spacing: 4) {
                     Text(emptyTitle)
                         .font(.caption)

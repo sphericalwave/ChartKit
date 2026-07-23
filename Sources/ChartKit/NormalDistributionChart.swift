@@ -10,16 +10,23 @@ public struct NormalDistributionChart: View {
     private let stddev: Double
     private let count: Int
     private let title: String
+    private let isLoading: Bool
 
-    public init(mean: Double, stddev: Double, count: Int, title: String = "Distribution") {
+    public init(mean: Double, stddev: Double, count: Int, title: String = "Distribution", isLoading: Bool = false) {
         self.mean = mean
         self.stddev = stddev
         self.count = count
         self.title = title
+        self.isLoading = isLoading
     }
 
     public var body: some View {
-        if stddev > 0, count >= 2 {
+        if isLoading {
+            Section(title) {
+                ProgressView()
+                    .frame(maxWidth: .infinity, minHeight: 140)
+            }
+        } else if stddev > 0, count >= 2 {
             let curve = NormalCurve.points(mean: mean, stddev: stddev)
             let ticks = NormalCurve.ticks(mean: mean, stddev: stddev)
             Section(title) {

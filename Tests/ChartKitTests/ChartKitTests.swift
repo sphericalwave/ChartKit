@@ -51,6 +51,46 @@ final class ChartKitTests: XCTestCase {
         XCTAssertEqual(label, "Q3 2026")
     }
 
+    // MARK: - PeriodGoalBarChart.paddedDomain
+
+    func testPaddedDomainEmptyIsUnitRange() {
+        let d = PeriodGoalBarChart.paddedDomain(points: [], goal: nil)
+        XCTAssertEqual(d.lowerBound, 0)
+        XCTAssertEqual(d.upperBound, 1)
+    }
+
+    func testPaddedDomainSingleValuePadsTenPercent() {
+        let d = PeriodGoalBarChart.paddedDomain(
+            points: [ChartPoint(start: .now, value: 190)], goal: nil)
+        // pad = max(1, 190 * 0.1) = 19
+        XCTAssertEqual(d.lowerBound, 171, accuracy: 0.0001)
+        XCTAssertEqual(d.upperBound, 209, accuracy: 0.0001)
+    }
+
+    func testPaddedDomainIncludesGoalAndPadsFifteenPercent() {
+        let points = [ChartPoint(start: .now, value: 190), ChartPoint(start: .now, value: 195)]
+        let d = PeriodGoalBarChart.paddedDomain(points: points, goal: 180)
+        // lo=180, hi=195, pad = max(1, 15 * 0.15) = 2.25
+        XCTAssertEqual(d.lowerBound, 177.75, accuracy: 0.0001)
+        XCTAssertEqual(d.upperBound, 197.25, accuracy: 0.0001)
+    }
+
+    func testPaddedDomainClampsLowerBoundAtZero() {
+        let points = [ChartPoint(start: .now, value: 2), ChartPoint(start: .now, value: 30)]
+        let d = PeriodGoalBarChart.paddedDomain(points: points, goal: nil)
+        // lo=2, pad = max(1, 28 * 0.15) = 4.2 → 2 - 4.2 = -2.2, clamped to 0
+        XCTAssertEqual(d.lowerBound, 0, accuracy: 0.0001)
+    }
+
+    func testPaddedDomainDayLabelIsShortDate() {
+        var comps = DateComponents()
+        comps.year = 2026; comps.month = 8; comps.day = 5
+        let date = Calendar(identifier: .gregorian).date(from: comps)!
+        let label = PeriodGoalBarChart.label(
+            for: ChartPoint(start: date, value: 0), index: 0, scale: .day)
+        XCTAssertEqual(label, "8/5")
+    }
+
     // MARK: - NormalCurve
 
     func testNormalCurveDegenerateStddevReturnsEmpty() {

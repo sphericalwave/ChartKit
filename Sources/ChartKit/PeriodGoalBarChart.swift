@@ -1,0 +1,228 @@
+import SwiftUI
+import Charts
+
+/// A `Section`-ready bar chart switchable across day/week/month/quarter/year
+/// (via a segmented picker) with an optional glowing "Goal" bar and a padded,
+/// non-zero y-domain — the presentation body-composition metrics want, where
+/// values cluster in a narrow band and a `0…max` axis flattens every bar to the
+/// same height.
+///
+/// Unlike `PeriodBarChart` (which plots the day scale against real dates), every
+/// scale here uses a short categorical label. That's what lets a trailing "Goal"
+/// bar sit alongside the data bars on any scale.
+///
+/// Scales with fewer than `minimumPoints` points are hidden from the picker.
+///
+/// Renders plain content (no `Section` wrapper) so the host decides the
+/// container — drop it in a `Section` inside a `Form`, or in a custom card row.
+public struct PeriodGoalBarChart: View {
+
+    /// Reuses `PeriodBarChart`'s per-scale point container.
+    public typealias DataSet = PeriodBarChart.DataSet
+
+    private let data: DataSet
+    @Binding private var selection: ChartTimeframe
+    private let goal: Double?
+    private let title: String
+    private let barColor: Color
+    private let goalLabel: String
+    private let valueSpecifier: String
+    private let isLoading: Bool
+    private let minimumPoints: Int
+    private let emptyTitle: String
+    private let emptyMessage: String
+
+    @State private var selectedLabel: String?
+
+    public init(
+        data: DataSet,
+        selection: Binding<ChartTimeframe>,
+        goal: Double? = nil,
+        title: String,
+        barColor: Color = .accentColor,
+        goalLabel: String = "Goal",
+        valueSpecifier: String = "%.1f",
+        isLoading: Bool = false,
+        minimumPoints: Int = 2,
+        emptyTitle: String = "No data",
+        emptyMessage: String = "Not enough data yet."
+    ) {
+        self.data = data
+        self._selection = selection
+        self.goal = goal
+        self.title = title
+        self.barColor = barColor
+        self.goalLabel = goalLabel
+        self.valueSpecifier = valueSpecifier
+        self.isLoading = isLoading
+        self.minimumPoints = minimumPoints
+        self.emptyTitle = emptyTitle
+        self.emptyMessage = emptyMessage
+    }
+
+    private var availableScales: [ChartTimeframe] {
+        ChartTimeframe.allCases.filter { data.points(for: $0).count >= minimumPoints }
+    }
+
+    /// Padded domain around the data (and goal, if any). Pure so it's unit-testable.
+    /// Kept clamped at 0 since every metric this serves (weight, waist, body-fat) is
+    /// positive — it just prevents a stray negative axis after padding.
+    static func paddedDomain(points: [ChartPoint], goal: Double?) -> ClosedRange<Double> {
+        var values = points.map(\.value)
+        if let goal { values.append(goal) }
+        guard let lo = values.min(), let hi = values.max() else { return 0...1 }
+        if lo == hi {
+            let pad = Swift.max(1, abs(lo) * 0.1)
+            return Swift.max(0, lo - pad)...(hi + pad)
+        }
+        let pad = Swift.max(1, (hi - lo) * 0.15)
+        return Swift.max(0, lo - pad)...(hi + pad)
+    }
+
+    /// Categorical x label for a bar. Day gets a short "M/d" (PeriodBarLabeler
+    /// intentionally leaves day blank, since PeriodBarChart labels it off the axis).
+    static func label(for point: ChartPoint, index: Int, scale: ChartTimeframe) -> String {
+        guard scale == .day else {
+            return PeriodBarLabeler.label(for: point, index: index, scale: scale)
+        }
+        return dayFormatter.string(from: point.start)
+    }
+
+    private static let dayFormatter: DateFormatter = {
+        let f = DateFormatter()
+        f.dateFormat = "M/d"
+        return f
+    }()
+
+    public var body: some View {
+        let scales = availableScales
+        Group {
+            if isLoading {
+                loadingBody
+            } else if scales.isEmpty {
+                emptyBody
+            } else {
+                // A persisted selection can outlive its data — fall back to the
+                // widest scale still available.
+                let scale = scales.contains(selection) ? selection : scales[0]
+                let points = data.points(for: scale)
+                loadedBody(points: points, scale: scale, scales: scales)
+            }
+        }
+    }
+
+    private var loadingBody: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            ProgressView()
+                .frame(maxWidth: .infinity, minHeight: 160)
+            picker(scales: ChartTimeframe.allCases)
+        }
+        .padding(.vertical, 4)
+    }
+
+    private var emptyBody: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text(title)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+            Text(emptyMessage)
+                .font(.footnote)
+                .foregroundStyle(.secondary)
+                .frame(maxWidth: .infinity, minHeight: 120)
+        }
+        .padding(.vertical, 4)
+    }
+
+    private func loadedBody(points: [ChartPoint], scale: ChartTimeframe, scales: [ChartTimeframe]) -> some View {
+        let avg = points.isEmpty ? 0 : points.reduce(0) { $0 + $1.value } / Double(points.count)
+        return VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                Text(title)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                Spacer()
+                Text("avg \(avg, specifier: valueSpecifier)")
+                    .font(.caption.monospacedDigit())
+                    .foregroundStyle(.secondary)
+            }
+            TimelineView(.animation) { context in
+                chart(points: points, scale: scale, glow: glowIntensity(at: context.date))
+            }
+            picker(scales: scales)
+        }
+        .padding(.vertical, 4)
+    }
+
+    @ViewBuilder
+    private func chart(points: [ChartPoint], scale: ChartTimeframe, glow: Double) -> some View {
+        let domain = Self.paddedDomain(points: points, goal: goal)
+        Chart {
+            // Bars start at the domain floor, not 0. With a non-zero y-domain a
+            // plain `y:` BarMark still draws from 0 — far below the plot — and
+            // that overflow isn't always clipped by the host container (a `List`
+            // row lets it bleed over the picker and axis labels). Anchoring at
+            // `domain.lowerBound` keeps every bar inside the plot.
+            ForEach(Array(points.enumerated()), id: \.offset) { index, p in
+                let label = Self.label(for: p, index: index, scale: scale)
+                BarMark(
+                    x: .value("Period", label),
+                    yStart: .value("Floor", domain.lowerBound),
+                    yEnd: .value("Value", p.value)
+                )
+                    .foregroundStyle(selectedLabel == label ? Color.primary : barColor)
+                    .annotation(position: .top, alignment: .center, spacing: 2) {
+                        if selectedLabel == label {
+                            Text("\(p.value, specifier: valueSpecifier)")
+                                .font(.caption2.monospacedDigit().bold())
+                                .foregroundStyle(.primary)
+                        }
+                    }
+            }
+            if let goal {
+                BarMark(
+                    x: .value("Period", goalLabel),
+                    yStart: .value("Floor", domain.lowerBound),
+                    yEnd: .value("Value", goal)
+                )
+                    .foregroundStyle(Color.white)
+                    .goalGlow(intensity: glow)
+                    .annotation(position: .top) {
+                        Text("\(goal, specifier: valueSpecifier)")
+                            .font(.caption2)
+                            .foregroundStyle(.white)
+                    }
+            }
+        }
+        .frame(height: 160)
+        .chartYScale(domain: domain)
+        .chartXSelection(value: $selectedLabel)
+    }
+
+    private func picker(scales: [ChartTimeframe]) -> some View {
+        Picker("Timeframe", selection: $selection) {
+            ForEach(scales) { s in
+                Text(s.short).tag(s)
+            }
+        }
+        .pickerStyle(.segmented)
+    }
+
+    /// 0…1 pulse driving the goal bar's glow.
+    private func glowIntensity(at date: Date) -> Double {
+        let cycleDuration = 2.4
+        let phase = (date.timeIntervalSinceReferenceDate / cycleDuration) * (2.0 * Double.pi)
+        return (sin(phase) + 1.0) / 2.0
+    }
+}
+
+private extension ChartContent {
+    func goalGlow(intensity: Double) -> some ChartContent {
+        let clamped = Swift.min(1.0, Swift.max(0.0, intensity))
+        let opacity = 0.75 + (0.25 * clamped)
+        let shadowOpacity = 0.4 + (0.5 * clamped)
+        let radius = 2.0 + (4.0 * clamped)
+        return self
+            .opacity(opacity)
+            .shadow(color: Color.white.opacity(shadowOpacity), radius: radius)
+    }
+}

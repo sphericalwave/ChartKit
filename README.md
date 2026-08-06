@@ -1,8 +1,13 @@
 # ChartKit
 
 Ready-made Swift Charts presentations for SwiftUI stats screens: a
-day/week/month/quarter/year bar chart with a segmented picker, and a
-normal-distribution curve fitted to a sample's mean/stddev.
+day/week/month/quarter/year bar chart with a segmented picker, a goal-tracking
+variant with a padded axis, and a normal-distribution curve fitted to a sample's
+mean/stddev.
+
+| PeriodGoalBarChart | PeriodBarChart |
+|---|---|
+| ![PeriodGoalBarChart](Docs/img/period-goal-bar-chart.png) | ![PeriodBarChart](Docs/img/period-bar-chart.png) |
 
 ## Requirements
 
@@ -25,6 +30,13 @@ normal-distribution curve fitted to a sample's mean/stddev.
   the axis); coarser scales use short categorical labels — an ordinal
   "W1, W2, …" for week (a date string doesn't stay readable once there are
   more than a handful of bars), a formatted date for month/quarter/year.
+- `PeriodGoalBarChart` — same day/week/month/quarter/year switching as
+  `PeriodBarChart`, plus an optional glowing "Goal" bar and a **padded, non-zero
+  y-domain** (`paddedDomain(points:goal:)`) so values that cluster in a narrow
+  band — weight, waist, body-fat — stay visually distinct instead of flattening
+  against a `0…max` axis. Every scale uses categorical labels (so the trailing
+  goal bar fits on any scale), and it renders plain content — wrap it in your own
+  `Section` or card. Pass `goal: nil` for the plain padded-axis bar chart.
 - `NormalDistributionChart` — `Section`-ready normal curve fitted to a
   (mean, stddev, count) triple. Renders nothing if `stddev <= 0` or
   `count < 2` — no shape to show.
@@ -49,6 +61,17 @@ Form {
                     quarter: quarterlyPoints, year: yearlyPoints),
         selection: $scale
     )
+
+    Section {
+        PeriodGoalBarChart(
+            data: .init(week: weeklyWeights, month: monthlyWeights),
+            selection: $weightScale,
+            goal: 185,
+            title: "Weight (lbs)",
+            barColor: .green
+        )
+    }
+
     NormalDistributionChart(mean: dist.mean, stddev: dist.stddev, count: dist.count)
 }
 ```

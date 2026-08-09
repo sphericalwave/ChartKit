@@ -226,3 +226,19 @@ private extension ChartContent {
             .shadow(color: Color.white.opacity(shadowOpacity), radius: radius)
     }
 }
+
+#if DEBUG
+#Preview("PeriodGoalBarChart") {
+    Form {
+        Section {
+            PeriodGoalBarChart(
+                data: ChartKitSamples.weightData,
+                selection: .constant(.month),
+                goal: 178,
+                title: "Weight (lbs)",
+                barColor: .green
+            )
+        }
+    }
+}
+#endif

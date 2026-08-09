@@ -101,3 +101,11 @@ public struct NormalDistributionChart: View {
         return String(format: "%@%.1fσ", sign, abs(z))
     }
 }
+
+#if DEBUG
+#Preview("NormalDistributionChart") {
+    Form {
+        NormalDistributionChart(mean: 72, stddev: 8, count: 240)
+    }
+}
+#endif

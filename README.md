@@ -5,9 +5,13 @@ day/week/month/quarter/year bar chart with a segmented picker, a goal-tracking
 variant with a padded axis, and a normal-distribution curve fitted to a sample's
 mean/stddev.
 
-| PeriodGoalBarChart | PeriodBarChart |
-|---|---|
-| ![PeriodGoalBarChart](Docs/img/period-goal-bar-chart.png) | ![PeriodBarChart](Docs/img/period-bar-chart.png) |
+<!-- SCREENSHOTS:START -->
+| Component | Preview |
+| --- | --- |
+| `NormalDistributionChart` | ![NormalDistributionChart](Docs/img/normal-distribution-chart.png) |
+| `PeriodBarChart` | ![PeriodBarChart](Docs/img/period-bar-chart.png) |
+| `PeriodGoalBarChart` | ![PeriodGoalBarChart](Docs/img/period-goal-bar-chart.png) |
+<!-- SCREENSHOTS:END -->
 
 ## Requirements
 

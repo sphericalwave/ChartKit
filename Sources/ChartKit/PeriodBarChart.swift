@@ -52,6 +52,8 @@ public struct PeriodBarChart: View {
     private let minimumPoints: Int
     private let emptyTitle: String
     private let emptyMessage: String
+    private let title: ((ChartTimeframe) -> String)?
+    private let valueLabel: ((Double) -> String)?
 
     public init(
         data: DataSet,
@@ -59,7 +61,9 @@ public struct PeriodBarChart: View {
         isLoading: Bool = false,
         minimumPoints: Int = 2,
         emptyTitle: String = "Avg plays",
-        emptyMessage: String = "Not enough data yet."
+        emptyMessage: String = "Not enough data yet.",
+        title: ((ChartTimeframe) -> String)? = nil,
+        valueLabel: ((Double) -> String)? = nil
     ) {
         self.data = data
         self._selection = selection
@@ -67,6 +71,8 @@ public struct PeriodBarChart: View {
         self.minimumPoints = minimumPoints
         self.emptyTitle = emptyTitle
         self.emptyMessage = emptyMessage
+        self.title = title
+        self.valueLabel = valueLabel
     }
 
     private var availableScales: [ChartTimeframe] {
@@ -109,11 +115,11 @@ public struct PeriodBarChart: View {
                 let maxValue = max(points.map(\.value).max() ?? 0, 1)
                 VStack(alignment: .leading, spacing: 8) {
                     HStack {
-                        Text(scale.title)
+                        Text(title?(scale) ?? scale.title)
                             .font(.caption)
                             .foregroundStyle(.secondary)
                         Spacer()
-                        Text("avg \(avg, specifier: "%.1f")")
+                        Text(valueLabel?(avg) ?? "avg \(avg, specifier: "%.1f")")
                             .font(.caption.monospacedDigit())
                             .foregroundStyle(.secondary)
                     }

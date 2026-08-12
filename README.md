@@ -8,6 +8,7 @@ mean/stddev.
 <!-- SCREENSHOTS:START -->
 | Component | Preview |
 | --- | --- |
+| `CalendarHeatmap` | ![CalendarHeatmap](Docs/img/calendar-heatmap.png) |
 | `NormalDistributionChart` | ![NormalDistributionChart](Docs/img/normal-distribution-chart.png) |
 | `PeriodBarChart` | ![PeriodBarChart](Docs/img/period-bar-chart.png) |
 | `PeriodGoalBarChart` | ![PeriodGoalBarChart](Docs/img/period-goal-bar-chart.png) |

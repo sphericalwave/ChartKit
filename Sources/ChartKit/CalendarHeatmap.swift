@@ -14,6 +14,10 @@ public struct CalendarHeatmap: View {
     private let spacing: CGFloat
     private let today: Date
     private let opacity: (Date) -> Double
+    /// Internal-only escape hatch for `ScreenshotGenTests`: `ImageRenderer`
+    /// can't capture `ScrollView` content offscreen (it stays blank), so the
+    /// snapshot renders the same grid without the scroll container.
+    private let scrollable: Bool
 
     public init(
         weeks: Int,
@@ -23,11 +27,25 @@ public struct CalendarHeatmap: View {
         today: Date = Date(),
         opacity: @escaping (Date) -> Double
     ) {
+        self.init(weeks: weeks, color: color, cellSize: cellSize, spacing: spacing,
+                   today: today, scrollable: true, opacity: opacity)
+    }
+
+    init(
+        weeks: Int,
+        color: Color = .accentColor,
+        cellSize: CGFloat = 12,
+        spacing: CGFloat = 3,
+        today: Date = Date(),
+        scrollable: Bool,
+        opacity: @escaping (Date) -> Double
+    ) {
         self.weeks = weeks
         self.color = color
         self.cellSize = cellSize
         self.spacing = spacing
         self.today = today
+        self.scrollable = scrollable
         self.opacity = opacity
     }
 
@@ -37,20 +55,30 @@ public struct CalendarHeatmap: View {
             Array(days[$0..<min($0 + 7, days.count)])
         }
 
-        return ScrollView(.horizontal, showsIndicators: false) {
-            HStack(alignment: .top, spacing: spacing) {
-                ForEach(columns.indices, id: \.self) { index in
-                    VStack(spacing: spacing) {
-                        ForEach(columns[index], id: \.self) { day in
-                            RoundedRectangle(cornerRadius: 2)
-                                .fill(color.opacity(opacity(day)))
-                                .frame(width: cellSize, height: cellSize)
-                        }
+        let grid = HStack(alignment: .top, spacing: spacing) {
+            ForEach(columns.indices, id: \.self) { index in
+                VStack(spacing: spacing) {
+                    ForEach(columns[index], id: \.self) { day in
+                        RoundedRectangle(cornerRadius: 2)
+                            .fill(color.opacity(opacity(day)))
+                            .frame(width: cellSize, height: cellSize)
                     }
                 }
             }
-            .padding(.vertical, 4)
         }
+        .padding(.vertical, 4)
+
+        // ScrollView proposes a flexible height; without a concrete frame it
+        // collapses to zero in contexts that don't force one (e.g. offscreen
+        // rendering for the README screenshots).
+        return Group {
+            if scrollable {
+                ScrollView(.horizontal, showsIndicators: false) { grid }
+            } else {
+                grid
+            }
+        }
+        .frame(height: 7 * cellSize + 6 * spacing + 8)
     }
 
     /// Trailing `weeks` weeks of days, oldest first, padded so the grid

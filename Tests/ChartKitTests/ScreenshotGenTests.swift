@@ -27,7 +27,7 @@ final class ScreenshotGenTests: XCTestCase {
              } })),
             ("CalendarHeatmap", CGSize(width: 390, height: 140),
              AnyView(Form { Section {
-                 CalendarHeatmap(weeks: 17, today: Date(timeIntervalSince1970: 1_700_000_000)) { day in
+                 CalendarHeatmap(weeks: 17, today: Date(timeIntervalSince1970: 1_700_000_000), scrollable: false) { day in
                      day.hashValue % 3 == 0 ? 0.85 : 0.08
                  }
              } })),

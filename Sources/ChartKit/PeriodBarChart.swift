@@ -119,7 +119,7 @@ public struct PeriodBarChart: View {
                             .font(.caption)
                             .foregroundStyle(.secondary)
                         Spacer()
-                        Text(valueLabel?(avg) ?? "avg \(avg, specifier: "%.1f")")
+                        Text(valueLabel?(avg) ?? String(format: "avg %.1f", avg))
                             .font(.caption.monospacedDigit())
                             .foregroundStyle(.secondary)
                     }

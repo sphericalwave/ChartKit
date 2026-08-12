@@ -26,29 +26,38 @@ final class ChartKitTests: XCTestCase {
 
     // MARK: - PeriodBarLabeler
 
-    func testWeekLabelsAreOrdinalFromOldest() {
-        let cal = Calendar(identifier: .gregorian)
-        let points = (0..<3).map { i in
-            ChartPoint(start: cal.date(byAdding: .weekOfYear, value: i, to: .now)!, value: Double(i))
-        }
-        let labels = points.enumerated().map { PeriodBarLabeler.label(for: $0.element, index: $0.offset, scale: .week) }
-        XCTAssertEqual(labels, ["W1", "W2", "W3"])
+    func testWeekLabelsAreDates() {
+        var comps = DateComponents()
+        comps.year = 2026; comps.month = 7; comps.day = 21
+        let date = Calendar(identifier: .gregorian).date(from: comps)!
+        let label = PeriodBarLabeler.label(for: ChartPoint(start: date, value: 0), index: 5, scale: .week)
+        XCTAssertEqual(label, "7/21")
     }
 
-    func testMonthLabelFormatsAsMonthYear() {
+    func testMonthLabelShowsYearOnlyAtYearStart() {
         var comps = DateComponents()
         comps.year = 2026; comps.month = 7; comps.day = 1
         let date = Calendar(identifier: .gregorian).date(from: comps)!
-        let label = PeriodBarLabeler.label(for: ChartPoint(start: date, value: 0), index: 0, scale: .month)
-        XCTAssertEqual(label, "Jul '26")
+        XCTAssertEqual(PeriodBarLabeler.label(for: ChartPoint(start: date, value: 0), index: 0, scale: .month), "Jul '26")
+        XCTAssertEqual(PeriodBarLabeler.label(for: ChartPoint(start: date, value: 0), index: 3, scale: .month), "Jul")
+
+        var jan = DateComponents()
+        jan.year = 2027; jan.month = 1; jan.day = 1
+        let janDate = Calendar(identifier: .gregorian).date(from: jan)!
+        XCTAssertEqual(PeriodBarLabeler.label(for: ChartPoint(start: janDate, value: 0), index: 6, scale: .month), "Jan '27")
     }
 
-    func testQuarterLabelFormatsAsQuarterYear() {
+    func testQuarterLabelShowsYearOnlyAtYearStart() {
         var comps = DateComponents()
         comps.year = 2026; comps.month = 8; comps.day = 15
         let date = Calendar(identifier: .gregorian).date(from: comps)!
-        let label = PeriodBarLabeler.label(for: ChartPoint(start: date, value: 0), index: 0, scale: .quarter)
-        XCTAssertEqual(label, "Q3 2026")
+        XCTAssertEqual(PeriodBarLabeler.label(for: ChartPoint(start: date, value: 0), index: 0, scale: .quarter), "Q3 '26")
+        XCTAssertEqual(PeriodBarLabeler.label(for: ChartPoint(start: date, value: 0), index: 2, scale: .quarter), "Q3")
+
+        var q1 = DateComponents()
+        q1.year = 2027; q1.month = 1; q1.day = 15
+        let q1Date = Calendar(identifier: .gregorian).date(from: q1)!
+        XCTAssertEqual(PeriodBarLabeler.label(for: ChartPoint(start: q1Date, value: 0), index: 4, scale: .quarter), "Q1 '27")
     }
 
     // MARK: - PeriodGoalBarChart.paddedDomain

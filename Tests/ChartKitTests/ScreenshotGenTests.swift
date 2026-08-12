@@ -25,6 +25,12 @@ final class ScreenshotGenTests: XCTestCase {
                  PeriodGoalBarChart(data: ChartKitSamples.weightData, selection: .constant(.month),
                                     goal: 178, title: "Weight (lbs)", barColor: .green)
              } })),
+            ("CalendarHeatmap", CGSize(width: 390, height: 140),
+             AnyView(Form { Section {
+                 CalendarHeatmap(weeks: 17, today: Date(timeIntervalSince1970: 1_700_000_000)) { day in
+                     day.hashValue % 3 == 0 ? 0.85 : 0.08
+                 }
+             } })),
         ]
     }
 

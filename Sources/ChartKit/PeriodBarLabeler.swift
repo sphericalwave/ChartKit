@@ -12,6 +12,10 @@ enum PeriodBarLabeler {
     static func label(for point: ChartPoint, index: Int, scale: ChartTimeframe) -> String {
         let cal = Calendar.current
         switch scale {
+        case .hour:
+            let f = DateFormatter()
+            f.dateFormat = "ha"
+            return f.string(from: point.start)
         case .day:
             return ""
         case .week:

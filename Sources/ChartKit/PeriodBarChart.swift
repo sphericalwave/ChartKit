@@ -15,6 +15,7 @@ public struct PeriodBarChart: View {
     /// Data for every scale the chart can switch to. Scales with no data
     /// (or too little to plot) are simply absent from the picker.
     public struct DataSet {
+        public var hour: [ChartPoint]
         public var day: [ChartPoint]
         public var week: [ChartPoint]
         public var month: [ChartPoint]
@@ -22,12 +23,14 @@ public struct PeriodBarChart: View {
         public var year: [ChartPoint]
 
         public init(
+            hour: [ChartPoint] = [],
             day: [ChartPoint] = [],
             week: [ChartPoint] = [],
             month: [ChartPoint] = [],
             quarter: [ChartPoint] = [],
             year: [ChartPoint] = []
         ) {
+            self.hour = hour
             self.day = day
             self.week = week
             self.month = month
@@ -37,6 +40,7 @@ public struct PeriodBarChart: View {
 
         func points(for scale: ChartTimeframe) -> [ChartPoint] {
             switch scale {
+            case .hour:    return hour
             case .day:     return day
             case .week:    return week
             case .month:   return month

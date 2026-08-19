@@ -21,5 +21,12 @@ enum ChartKitSamples {
     static var weightData: PeriodBarChart.DataSet {
         .init(week: weekly, month: monthly)
     }
+
+    static let netCalorieWeekly = series([320, -180, 410, 90, -260, 150], step: .weekOfYear)
+    static let netCalorieMonthly = series([200, -90, 340, -150], step: .month)
+
+    static var netCalorieData: PeriodBarChart.DataSet {
+        .init(week: netCalorieWeekly, month: netCalorieMonthly)
+    }
 }
 #endif

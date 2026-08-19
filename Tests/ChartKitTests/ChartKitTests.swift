@@ -100,6 +100,36 @@ final class ChartKitTests: XCTestCase {
         XCTAssertEqual(label, "8/5")
     }
 
+    // MARK: - NetPeriodBarChart.paddedDomain
+
+    func testNetPaddedDomainEmptyIsSignedUnitRange() {
+        let d = NetPeriodBarChart.paddedDomain(points: [])
+        XCTAssertEqual(d.lowerBound, -1)
+        XCTAssertEqual(d.upperBound, 1)
+    }
+
+    func testNetPaddedDomainAllPositiveIncludesZero() {
+        let points = [ChartPoint(start: .now, value: 100), ChartPoint(start: .now, value: 200)]
+        let d = NetPeriodBarChart.paddedDomain(points: points)
+        // values with 0 appended: lo=0, hi=200, pad = max(1, 200*0.15) = 30
+        XCTAssertEqual(d.lowerBound, -30, accuracy: 0.0001)
+        XCTAssertEqual(d.upperBound, 230, accuracy: 0.0001)
+    }
+
+    func testNetPaddedDomainAllNegativeIncludesZero() {
+        let points = [ChartPoint(start: .now, value: -100), ChartPoint(start: .now, value: -50)]
+        let d = NetPeriodBarChart.paddedDomain(points: points)
+        // values with 0 appended: lo=-100, hi=0, pad = max(1, 100*0.15) = 15
+        XCTAssertEqual(d.lowerBound, -115, accuracy: 0.0001)
+        XCTAssertEqual(d.upperBound, 15, accuracy: 0.0001)
+    }
+
+    func testNetPaddedDomainNeverClampsLowerBoundAtZero() {
+        let points = [ChartPoint(start: .now, value: -500)]
+        let d = NetPeriodBarChart.paddedDomain(points: points)
+        XCTAssertLessThan(d.lowerBound, 0)
+    }
+
     // MARK: - NormalCurve
 
     func testNormalCurveDegenerateStddevReturnsEmpty() {

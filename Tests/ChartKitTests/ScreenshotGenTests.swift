@@ -25,6 +25,11 @@ final class ScreenshotGenTests: XCTestCase {
                  PeriodGoalBarChart(data: ChartKitSamples.weightData, selection: .constant(.month),
                                     goal: 178, title: "Weight (lbs)", barColor: .green)
              } })),
+            ("NetPeriodBarChart", CGSize(width: 390, height: 380),
+             AnyView(Form { Section {
+                 NetPeriodBarChart(data: ChartKitSamples.netCalorieData, selection: .constant(.week),
+                                   title: "Net Calories")
+             } })),
             ("CalendarHeatmap", CGSize(width: 390, height: 140),
              AnyView(Form { Section {
                  CalendarHeatmap(weeks: 17, today: Date(timeIntervalSince1970: 1_700_000_000), scrollable: false) { day in

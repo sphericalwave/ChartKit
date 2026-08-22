@@ -65,18 +65,22 @@ public struct PeriodGoalBarChart: View {
     }
 
     /// Padded domain around the data (and goal, if any). Pure so it's unit-testable.
-    /// Kept clamped at 0 since every metric this serves (weight, waist, body-fat) is
-    /// positive — it just prevents a stray negative axis after padding.
+    /// Clamped at 0 when the data itself is non-negative (weight, waist, body-fat) —
+    /// prevents a stray negative axis after padding. Left unclamped when the data
+    /// is genuinely negative (e.g. assisted/negative-load sets), since clamping a
+    /// negative-only range to 0 would invert lowerBound above upperBound.
     static func paddedDomain(points: [ChartPoint], goal: Double?) -> ClosedRange<Double> {
         var values = points.map(\.value)
         if let goal { values.append(goal) }
         guard let lo = values.min(), let hi = values.max() else { return 0...1 }
         if lo == hi {
             let pad = Swift.max(1, abs(lo) * 0.1)
-            return Swift.max(0, lo - pad)...(hi + pad)
+            let lower = lo >= 0 ? Swift.max(0, lo - pad) : lo - pad
+            return lower...(hi + pad)
         }
         let pad = Swift.max(1, (hi - lo) * 0.15)
-        return Swift.max(0, lo - pad)...(hi + pad)
+        let lower = lo >= 0 ? Swift.max(0, lo - pad) : lo - pad
+        return lower...(hi + pad)
     }
 
     /// Categorical x label for a bar. Day gets a short "M/d" (PeriodBarLabeler

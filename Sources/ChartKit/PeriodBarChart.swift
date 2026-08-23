@@ -154,6 +154,7 @@ public struct PeriodBarChart: View {
                     AxisValueLabel(format: .dateTime.weekday(.narrow), centered: true)
                 }
             }
+            .clipped()
         } else {
             Chart(Array(points.enumerated()), id: \.offset) { index, p in
                 let label = PeriodBarLabeler.label(for: p, index: index, scale: scale)
@@ -162,6 +163,7 @@ public struct PeriodBarChart: View {
             }
             .frame(height: 160)
             .chartYScale(domain: 0...maxValue * 1.15)
+            .clipped()
         }
     }
 }

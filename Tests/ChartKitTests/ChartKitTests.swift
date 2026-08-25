@@ -130,6 +130,68 @@ final class ChartKitTests: XCTestCase {
         XCTAssertLessThan(d.lowerBound, 0)
     }
 
+    // MARK: - ChartPaging
+
+    func testPageSizeValues() {
+        XCTAssertEqual(ChartPaging.pageSize(for: .hour), 24)
+        XCTAssertEqual(ChartPaging.pageSize(for: .day), 7)
+        XCTAssertEqual(ChartPaging.pageSize(for: .week), 4)
+        XCTAssertEqual(ChartPaging.pageSize(for: .month), 12)
+        XCTAssertEqual(ChartPaging.pageSize(for: .quarter), 4)
+        XCTAssertNil(ChartPaging.pageSize(for: .year))
+    }
+
+    private func days(_ count: Int, startingYear: Int = 2026, month: Int = 1, day: Int = 1) -> [ChartPoint] {
+        let cal = Calendar(identifier: .gregorian)
+        var comps = DateComponents()
+        comps.year = startingYear; comps.month = month; comps.day = day
+        let start = cal.date(from: comps)!
+        return (0..<count).map { i in
+            ChartPoint(start: cal.date(byAdding: .day, value: i, to: start)!, value: Double(i))
+        }
+    }
+
+    func testPagesSingleWhenUnderPageSize() {
+        let points = days(3)
+        let pages = ChartPaging.pages(points: points, scale: .week) // pageSize 4
+        XCTAssertEqual(pages.count, 1)
+        XCTAssertEqual(pages[0], points)
+    }
+
+    func testPagesChunksFromNewestEnd() {
+        let points = days(10)
+        let pages = ChartPaging.pages(points: points, scale: .day) // pageSize 7
+        XCTAssertEqual(pages.count, 2)
+        XCTAssertEqual(pages[0].count, 3)
+        XCTAssertEqual(pages[1].count, 7)
+        XCTAssertEqual(pages[1].last, points.last)
+        XCTAssertEqual(pages[0].first, points.first)
+    }
+
+    func testPagesUnpagedScaleReturnsSinglePage() {
+        let points = days(30)
+        let pages = ChartPaging.pages(points: points, scale: .year)
+        XCTAssertEqual(pages.count, 1)
+        XCTAssertEqual(pages[0], points)
+    }
+
+    func testPagesEmptyInputReturnsEmpty() {
+        XCTAssertEqual(ChartPaging.pages(points: [], scale: .day), [])
+    }
+
+    func testDateRangeLabelSameDay() {
+        let points = days(1)
+        let label = ChartPaging.dateRangeLabel(for: points, scale: .hour)
+        XCTAssertEqual(label, "Jan 1")
+    }
+
+    func testDateRangeLabelMultiDay() {
+        let points = days(7)
+        let label = ChartPaging.dateRangeLabel(for: points, scale: .day)
+        XCTAssertNotNil(label)
+        XCTAssertTrue(label!.contains("Jan"))
+    }
+
     // MARK: - NormalCurve
 
     func testNormalCurveDegenerateStddevReturnsEmpty() {

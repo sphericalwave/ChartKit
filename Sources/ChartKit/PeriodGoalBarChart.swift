@@ -34,6 +34,10 @@ public struct PeriodGoalBarChart: View {
 
     @State private var selectedLabel: String?
 
+    /// How many pages back from the newest page is currently visible.
+    /// 0 = newest. Reset to 0 whenever the scale changes.
+    @State private var pageOffset: Int = 0
+
     public init(
         data: DataSet,
         selection: Binding<ChartTimeframe>,
@@ -138,19 +142,48 @@ public struct PeriodGoalBarChart: View {
     }
 
     private func loadedBody(points: [ChartPoint], scale: ChartTimeframe, scales: [ChartTimeframe]) -> some View {
-        let avg = points.isEmpty ? 0 : points.reduce(0) { $0 + $1.value } / Double(points.count)
+        let pages = ChartPaging.pages(points: points, scale: scale)
+        let index = pages.isEmpty ? 0 : pages.count - 1 - min(pageOffset, pages.count - 1)
+        let visiblePoints = pages.isEmpty ? [] : pages[index]
+        let avg = visiblePoints.isEmpty ? 0 : visiblePoints.reduce(0) { $0 + $1.value } / Double(visiblePoints.count)
+        let dateRange = ChartPaging.dateRangeLabel(for: visiblePoints, scale: scale)
+        let pageBinding = Binding<Int>(
+            get: { index },
+            set: { newIndex in pageOffset = max(0, min(pages.count - 1, pages.count - 1 - newIndex)) }
+        )
         return VStack(alignment: .leading, spacing: 8) {
             HStack {
-                Text(title)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(title)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    if let dateRange {
+                        Text(dateRange)
+                            .font(.caption2)
+                            .foregroundStyle(.tertiary)
+                    }
+                }
                 Spacer()
                 Text("avg \(avg, specifier: valueSpecifier)")
                     .font(.caption.monospacedDigit())
                     .foregroundStyle(.secondary)
             }
             TimelineView(.animation) { context in
-                chart(points: points, scale: scale, glow: glowIntensity(at: context.date))
+                TabView(selection: pageBinding) {
+                    ForEach(pages.indices, id: \.self) { i in
+                        chart(points: pages[i], scale: scale, glow: glowIntensity(at: context.date))
+                            .tag(i)
+                    }
+                }
+                #if os(iOS)
+                .tabViewStyle(.page(indexDisplayMode: .never))
+                #endif
+                .frame(height: 160)
+            }
+            .frame(height: 160)
+            .onChange(of: scale) {
+                pageOffset = 0
+                selectedLabel = nil
             }
             picker(scales: scales)
         }

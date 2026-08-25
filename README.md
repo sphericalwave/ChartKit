@@ -42,6 +42,15 @@ mean/stddev.
   against a `0…max` axis. Every scale uses categorical labels (so the trailing
   goal bar fits on any scale), and it renders plain content — wrap it in your own
   `Section` or card. Pass `goal: nil` for the plain padded-axis bar chart.
+- `SlopeColoredLineChart` — line chart over dated points whose **segments are
+  colored by trend**: one color where the line rises, another where it falls, so
+  a run of good or bad periods reads at a glance without a legend. The y-axis is
+  caller-supplied (`yDomain` + `yAxisLabel`) because it changes from instance to
+  instance — a clock chart wants time labels and a domain a few minutes wider
+  than the recorded range, a percentage chart wants `"%"` labels and a clamped
+  domain. `risingColor`/`fallingColor` are yours to set too, since "up" isn't
+  good for every metric. Renders plain content — wrap it in your own `Section`
+  or card.
 - `NormalDistributionChart` — `Section`-ready normal curve fitted to a
   (mean, stddev, count) triple. Renders nothing if `stddev <= 0` or
   `count < 2` — no shape to show.

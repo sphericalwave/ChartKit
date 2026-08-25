@@ -1,0 +1,45 @@
+import XCTest
+@testable import ChartKit
+
+final class SlopeColoredLineChartTests: XCTestCase {
+
+    private func points(_ values: [Double]) -> [ChartPoint] {
+        let reference = Date(timeIntervalSince1970: 1_700_000_000)
+        return values.enumerated().map { index, value in
+            ChartPoint(start: reference.addingTimeInterval(Double(index) * 86_400), value: value)
+        }
+    }
+
+    // MARK: - segments(from:)
+
+    func testFewerThanTwoPointsHasNoSegments() {
+        XCTAssertTrue(SlopeColoredLineChart.segments(from: []).isEmpty)
+        XCTAssertTrue(SlopeColoredLineChart.segments(from: points([5])).isEmpty)
+    }
+
+    func testSegmentCountIsOneFewerThanPoints() {
+        XCTAssertEqual(SlopeColoredLineChart.segments(from: points([1, 2, 3, 4])).count, 3)
+    }
+
+    func testSegmentsSpanConsecutivePointsInOrder() {
+        let input = points([10, 20, 30])
+        let segments = SlopeColoredLineChart.segments(from: input)
+        XCTAssertEqual(segments.map(\.id), [0, 1])
+        XCTAssertEqual(segments.first?.start, input[0])
+        XCTAssertEqual(segments.first?.end, input[1])
+        XCTAssertEqual(segments.last?.end, input[2])
+    }
+
+    // MARK: - Trend direction
+
+    func testRisingAndFallingSegments() {
+        let segments = SlopeColoredLineChart.segments(from: points([1, 5, 2]))
+        XCTAssertTrue(segments[0].isRising)
+        XCTAssertFalse(segments[1].isRising)
+    }
+
+    func testFlatSegmentCountsAsRising() {
+        let segments = SlopeColoredLineChart.segments(from: points([3, 3]))
+        XCTAssertTrue(segments[0].isRising)
+    }
+}

@@ -30,6 +30,20 @@ final class ScreenshotGenTests: XCTestCase {
                  NetPeriodBarChart(data: ChartKitSamples.netCalorieData, selection: .constant(.week),
                                    title: "Net Calories")
              } })),
+            ("SlopeColoredLineChart", CGSize(width: 390, height: 220),
+             AnyView(Form { Section {
+                 SlopeColoredLineChart(points: ChartKitSamples.weekly, yDomain: 178...183,
+                                       yAxisLabel: { String(format: "%.1f", $0) })
+             } })),
+            ("SlopeColoredSeriesChart", CGSize(width: 390, height: 220),
+             AnyView(Form { Section {
+                 SlopeColoredSeriesChart(
+                     points: [72, 85, 81, 96, 104].enumerated().map { SeriesPoint(x: Double($0 + 1), value: $1) },
+                     yDomain: 0...125,
+                     xAxisLabel: { "R\(Int($0))" },
+                     yAxisLabel: { String(format: "%d:%02d", Int($0) / 60, Int($0) % 60) },
+                     risingColor: .green, fallingColor: .orange)
+             } })),
             ("CalendarHeatmap", CGSize(width: 390, height: 140),
              AnyView(Form { Section {
                  CalendarHeatmap(weeks: 17, today: Date(timeIntervalSince1970: 1_700_000_000), scrollable: false) { day in

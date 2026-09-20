@@ -51,6 +51,12 @@ mean/stddev.
   domain. `risingColor`/`fallingColor` are yours to set too, since "up" isn't
   good for every metric. Renders plain content — wrap it in your own `Section`
   or card.
+- `SlopeColoredSeriesChart` — the same trend-colored line for a series that
+  isn't dated: x is a plain `Double` (a round number, seconds elapsed, a set
+  index) instead of a calendar-day bucket, so per-round or per-second data
+  doesn't collapse into a single day. Takes `xAxisLabel` as well as
+  `yDomain`/`yAxisLabel` — a tick is drawn at every point's x, so keep the
+  series short enough for the labels to fit. Feed it `[SeriesPoint]`.
 - `NormalDistributionChart` — `Section`-ready normal curve fitted to a
   (mean, stddev, count) triple. Renders nothing if `stddev <= 0` or
   `count < 2` — no shape to show.

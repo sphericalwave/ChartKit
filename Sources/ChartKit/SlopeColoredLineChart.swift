@@ -16,6 +16,10 @@ import Charts
 /// `fallingColor` to suit the metric (more sleep is good; more weight may not
 /// be).
 ///
+/// Point markers are drawn by default. Pass `showsPoints: false` for a dense
+/// window — past a few dozen points the markers overlap into a band that hides
+/// the line they are meant to annotate.
+///
 /// Renders plain content — wrap it in your own `Section` or card.
 public struct SlopeColoredLineChart: View {
 
@@ -24,6 +28,7 @@ public struct SlopeColoredLineChart: View {
     private let yAxisLabel: (Double) -> String
     private let risingColor: Color
     private let fallingColor: Color
+    private let showsPoints: Bool
     private let height: CGFloat
 
     public init(
@@ -32,6 +37,7 @@ public struct SlopeColoredLineChart: View {
         yAxisLabel: @escaping (Double) -> String,
         risingColor: Color = .blue,
         fallingColor: Color = .red,
+        showsPoints: Bool = true,
         height: CGFloat = 140
     ) {
         self.points = points
@@ -39,6 +45,7 @@ public struct SlopeColoredLineChart: View {
         self.yAxisLabel = yAxisLabel
         self.risingColor = risingColor
         self.fallingColor = fallingColor
+        self.showsPoints = showsPoints
         self.height = height
     }
 
@@ -85,12 +92,16 @@ public struct SlopeColoredLineChart: View {
             }
             // Indexed rather than keyed by date: repeated dates are the
             // caller's business, and a duplicate id would drop a point.
-            ForEach(Array(points.enumerated()), id: \.offset) { _, point in
-                PointMark(
-                    x: .value("Date", point.start, unit: .day),
-                    y: .value("Value", point.value)
-                )
-                .foregroundStyle(.primary)
+            // Dense series hide their own line behind the markers, so a caller
+            // plotting a long window can turn them off.
+            if showsPoints {
+                ForEach(Array(points.enumerated()), id: \.offset) { _, point in
+                    PointMark(
+                        x: .value("Date", point.start, unit: .day),
+                        y: .value("Value", point.value)
+                    )
+                    .foregroundStyle(.primary)
+                }
             }
         }
         .chartYScale(domain: yDomain)

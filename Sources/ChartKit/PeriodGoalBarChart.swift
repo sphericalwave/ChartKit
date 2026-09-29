@@ -31,6 +31,7 @@ public struct PeriodGoalBarChart: View {
     private let minimumPoints: Int
     private let emptyTitle: String
     private let emptyMessage: String
+    private let showsScalePicker: Bool
 
     @State private var selectedLabel: String?
 
@@ -49,7 +50,8 @@ public struct PeriodGoalBarChart: View {
         isLoading: Bool = false,
         minimumPoints: Int = 2,
         emptyTitle: String = "No data",
-        emptyMessage: String = "Not enough data yet."
+        emptyMessage: String = "Not enough data yet.",
+        showsScalePicker: Bool = true
     ) {
         self.data = data
         self._selection = selection
@@ -62,6 +64,7 @@ public struct PeriodGoalBarChart: View {
         self.minimumPoints = minimumPoints
         self.emptyTitle = emptyTitle
         self.emptyMessage = emptyMessage
+        self.showsScalePicker = showsScalePicker
     }
 
     private var availableScales: [ChartTimeframe] {
@@ -235,13 +238,18 @@ public struct PeriodGoalBarChart: View {
         .chartXSelection(value: $selectedLabel)
     }
 
+    /// Hidden when the host drives the scale from elsewhere — a single control
+    /// above a stack of charts, say, rather than one picker per chart.
+    @ViewBuilder
     private func picker(scales: [ChartTimeframe]) -> some View {
-        Picker("Timeframe", selection: $selection) {
-            ForEach(scales) { s in
-                Text(s.short).tag(s)
+        if showsScalePicker {
+            Picker("Timeframe", selection: $selection) {
+                ForEach(scales) { s in
+                    Text(s.short).tag(s)
+                }
             }
+            .pickerStyle(.segmented)
         }
-        .pickerStyle(.segmented)
     }
 
     /// 0…1 pulse driving the goal bar's glow.

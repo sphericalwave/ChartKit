@@ -20,6 +20,10 @@ import Charts
 /// window — past a few dozen points the markers overlap into a band that hides
 /// the line they are meant to annotate.
 ///
+/// Markers take the chart's default foreground unless `pointColor` is set —
+/// pass one when that default blends into the line (e.g. `.primary` for
+/// white-on-dark dots).
+///
 /// Renders plain content — wrap it in your own `Section` or card.
 public struct SlopeColoredLineChart: View {
 
@@ -29,6 +33,7 @@ public struct SlopeColoredLineChart: View {
     private let risingColor: Color
     private let fallingColor: Color
     private let showsPoints: Bool
+    private let pointColor: Color?
     private let height: CGFloat
 
     public init(
@@ -38,6 +43,7 @@ public struct SlopeColoredLineChart: View {
         risingColor: Color = .blue,
         fallingColor: Color = .red,
         showsPoints: Bool = true,
+        pointColor: Color? = nil,
         height: CGFloat = 140
     ) {
         self.points = points
@@ -46,6 +52,7 @@ public struct SlopeColoredLineChart: View {
         self.risingColor = risingColor
         self.fallingColor = fallingColor
         self.showsPoints = showsPoints
+        self.pointColor = pointColor
         self.height = height
     }
 
@@ -100,7 +107,7 @@ public struct SlopeColoredLineChart: View {
                         x: .value("Date", point.start, unit: .day),
                         y: .value("Value", point.value)
                     )
-                    .foregroundStyle(.primary)
+                    .foregroundStyle(pointColor.map(AnyShapeStyle.init) ?? AnyShapeStyle(.primary))
                 }
             }
         }

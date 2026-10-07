@@ -41,7 +41,9 @@ mean/stddev.
   band — weight, waist, body-fat — stay visually distinct instead of flattening
   against a `0…max` axis. Every scale uses categorical labels (so the trailing
   goal bar fits on any scale), and it renders plain content — wrap it in your own
-  `Section` or card. Pass `goal: nil` for the plain padded-axis bar chart.
+  `Section` or card. Pass `goal: nil` for the plain padded-axis bar chart, and
+  `offeredScales:` (e.g. `[.day, .week, .month, .quarter]`) to keep a scale out
+  of the picker even when there's data for it.
 - `SlopeColoredLineChart` — line chart over dated points whose **segments are
   colored by trend**: one color where the line rises, another where it falls, so
   a run of good or bad periods reads at a glance without a legend. The y-axis is

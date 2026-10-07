@@ -9,9 +9,12 @@ mean/stddev.
 | Component | Preview |
 | --- | --- |
 | `CalendarHeatmap` | ![CalendarHeatmap](Docs/img/calendar-heatmap.png) |
+| `NetPeriodBarChart` | ![NetPeriodBarChart](Docs/img/net-period-bar-chart.png) |
 | `NormalDistributionChart` | ![NormalDistributionChart](Docs/img/normal-distribution-chart.png) |
 | `PeriodBarChart` | ![PeriodBarChart](Docs/img/period-bar-chart.png) |
 | `PeriodGoalBarChart` | ![PeriodGoalBarChart](Docs/img/period-goal-bar-chart.png) |
+| `SlopeColoredLineChart` | ![SlopeColoredLineChart](Docs/img/slope-colored-line-chart.png) |
+| `SlopeColoredSeriesChart` | ![SlopeColoredSeriesChart](Docs/img/slope-colored-series-chart.png) |
 <!-- SCREENSHOTS:END -->
 
 ## Requirements

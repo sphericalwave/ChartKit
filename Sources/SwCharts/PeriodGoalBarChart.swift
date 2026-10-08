@@ -290,7 +290,7 @@ private extension ChartContent {
     Form {
         Section {
             PeriodGoalBarChart(
-                data: ChartKitSamples.weightData,
+                data: SwChartsSamples.weightData,
                 selection: .constant(.month),
                 goal: 178,
                 title: "Weight (lbs)",

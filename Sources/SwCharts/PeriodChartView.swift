@@ -13,7 +13,9 @@ import Charts
 ///   look) or bars (`.bar`), with a dashed rule at the window average;
 /// - the current, unfinished week or month faded and labelled "so far";
 /// - drag-to-read: slide a finger across the chart and the header shows the
-///   bucket under it. The selection stays after the finger lifts.
+///   bucket under it. The selection stays after the finger lifts;
+/// - optionally a `PeriodGoal`: a dashed goal line across each bucket (scaled
+///   per period for `.sum` metrics) and each bar/point tinted hit or miss.
 ///
 /// Empty buckets are gaps, not zeros. Pair it with a `PeriodPicker` in the
 /// navigation bar's principal slot. Renders plain content — wrap it in your
@@ -38,6 +40,9 @@ public struct PeriodChartView: View {
     private let risingColor: Color
     private let fallingColor: Color
     private let barColor: Color
+    private let goal: PeriodGoal?
+    private let hitColor: Color
+    private let missColor: Color
     private let height: CGFloat
 
     @State private var selectedDate: Date?
@@ -52,6 +57,9 @@ public struct PeriodChartView: View {
         risingColor: Color = .blue,
         fallingColor: Color = .red,
         barColor: Color = .accentColor,
+        goal: PeriodGoal? = nil,
+        hitColor: Color = .green,
+        missColor: Color = .orange,
         height: CGFloat = 160,
         bucketer: PeriodBucketer = PeriodBucketer(),
         now: Date = .now
@@ -68,6 +76,9 @@ public struct PeriodChartView: View {
         self.risingColor = risingColor
         self.fallingColor = fallingColor
         self.barColor = barColor
+        self.goal = goal
+        self.hitColor = hitColor
+        self.missColor = missColor
         self.height = height
     }
 
@@ -103,6 +114,13 @@ public struct PeriodChartView: View {
                     .foregroundStyle(.secondary)
                 if let average = summary.windowAverage {
                     Text("avg \(valueLabel(average))")
+                        .font(.caption.monospacedDigit())
+                        .foregroundStyle(.secondary)
+                }
+                if let goal, let newest = buckets.last {
+                    let hits = buckets.filter { outcome(of: $0) == .hit }.count
+                    let judged = buckets.filter { outcome(of: $0) != nil }.count
+                    Text("goal \(valueLabel(goal.target(for: Self.fullBucket(newest, period: period, calendar: calendar), aggregation: aggregation, calendar: calendar))) · \(hits)/\(judged) hit")
                         .font(.caption.monospacedDigit())
                         .foregroundStyle(.secondary)
                 }
@@ -155,6 +173,7 @@ public struct PeriodChartView: View {
             } else {
                 barMarks
             }
+            goalMarks
         }
         .chartYScale(domain: yDomain)
         .chartXScale(domain: (buckets.first?.start ?? .now)...(buckets.last?.end ?? .now))
@@ -231,7 +250,7 @@ public struct PeriodChartView: View {
                 y: .value("Value", entry.point.value)
             )
             .symbolSize(isSelected ? 80 : 24)
-            .foregroundStyle(Color.primary.opacity(entry.bucket.isPartial ? 0.4 : 1))
+            .foregroundStyle(pointColor(for: entry.bucket).opacity(entry.bucket.isPartial ? 0.4 : 1))
             .annotation(position: .top, alignment: .center, spacing: 4) {
                 annotation(for: entry.bucket, isSelected: isSelected)
             }
@@ -252,10 +271,47 @@ public struct PeriodChartView: View {
                 yStart: .value("Floor", floor),
                 yEnd: .value("Value", entry.point.value)
             )
-            .foregroundStyle((isSelected ? Color.primary : barColor).opacity(entry.bucket.isPartial ? 0.35 : 1))
+            .foregroundStyle((isSelected ? Color.primary : fillColor(for: entry.bucket)).opacity(entry.bucket.isPartial ? 0.35 : 1))
             .annotation(position: .top, alignment: .center, spacing: 2) {
                 annotation(for: entry.bucket, isSelected: isSelected)
             }
+        }
+    }
+
+    /// One dashed segment per bucket at that bucket's goal, so a `.sum`
+    /// goal steps with month length and a partial week shows its full target.
+    @ChartContentBuilder
+    private var goalMarks: some ChartContent {
+        if let goal {
+            ForEach(buckets) { bucket in
+                RuleMark(
+                    xStart: .value("Start", bucket.start),
+                    xEnd: .value("End", bucket.end),
+                    y: .value("Goal", goal.target(for: bucket, aggregation: aggregation, calendar: calendar))
+                )
+                .foregroundStyle(hitColor.opacity(0.8))
+                .lineStyle(StrokeStyle(lineWidth: 1.5, dash: [6, 3]))
+            }
+        }
+    }
+
+    private func outcome(of bucket: PeriodBucket) -> PeriodGoal.Outcome? {
+        goal?.outcome(for: bucket, aggregation: aggregation, calendar: calendar)
+    }
+
+    private func fillColor(for bucket: PeriodBucket) -> Color {
+        switch outcome(of: bucket) {
+        case .hit:  return hitColor
+        case .miss: return missColor
+        case nil:   return barColor
+        }
+    }
+
+    private func pointColor(for bucket: PeriodBucket) -> Color {
+        switch outcome(of: bucket) {
+        case .hit:  return hitColor
+        case .miss: return missColor
+        case nil:   return .primary
         }
     }
 
@@ -273,12 +329,20 @@ public struct PeriodChartView: View {
 
     private var yDomain: ClosedRange<Double> {
         let points = plotted.map(\.point)
+        let targets = goalTargets
         switch style {
         case .line:
-            return PeriodGoalBarChart.paddedDomain(points: points, goal: summary.windowAverage)
+            let goalPoints = targets.map { ChartPoint(start: .distantPast, value: $0) }
+            return PeriodGoalBarChart.paddedDomain(points: points + goalPoints, goal: summary.windowAverage)
         case .bar:
-            return Self.barDomain(values: points.map(\.value))
+            return Self.barDomain(values: points.map(\.value) + targets)
         }
+    }
+
+    /// Every bucket's goal, so the goal line is never clipped.
+    private var goalTargets: [Double] {
+        guard let goal else { return [] }
+        return buckets.map { goal.target(for: $0, aggregation: aggregation, calendar: calendar) }
     }
 
     private var axisDates: [Date] {
@@ -286,6 +350,14 @@ public struct PeriodChartView: View {
     }
 
     // MARK: Pure helpers
+
+    /// `bucket` stretched to a whole period, for the header's goal label —
+    /// the newest bucket is the current week/month, whose goal is the full
+    /// period's.
+    static func fullBucket(_ bucket: PeriodBucket, period: ChartPeriod, calendar: Calendar) -> PeriodBucket {
+        let end = calendar.date(byAdding: period.component, value: 1, to: bucket.start) ?? bucket.end
+        return PeriodBucket(start: bucket.start, end: end, value: bucket.value, isPartial: false)
+    }
 
     static func midpoint(of bucket: PeriodBucket) -> Date {
         bucket.start.addingTimeInterval(bucket.end.timeIntervalSince(bucket.start) / 2)
@@ -350,6 +422,13 @@ public struct PeriodChartView: View {
             PeriodChartView(title: "Calories", samples: SwChartsSamples.dailyCalories,
                             period: .week, aggregation: .sum, style: .bar,
                             valueLabel: { $0.formatted(.number.notation(.compactName)) },
+                            now: SwChartsSamples.now)
+        }
+        Section {
+            PeriodChartView(title: "Calories vs goal", samples: SwChartsSamples.dailyCalories,
+                            period: .week, aggregation: .sum, style: .bar,
+                            valueLabel: { $0.formatted(.number.notation(.compactName)) },
+                            goal: PeriodGoal(2300, direction: .atMost),
                             now: SwChartsSamples.now)
         }
     }

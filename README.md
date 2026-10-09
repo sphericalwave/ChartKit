@@ -45,8 +45,9 @@ The house standard for stats screens. New screens should use this rather than
 | `M` | last 12 months | calendar months |
 
 - **Aggregation is per metric.** Declare `MetricAggregation.sum` (calories,
-  reps, sessions, minutes) or `.average` (HR, score, %, weight) once; the chart
-  labels it "total" or "avg". Samples first collapse to one value per day, then
+  reps, sessions, minutes), `.average` (HR, score, %, weight), or `.max` /
+  `.min` (heaviest set, peak/lowest HR) once; the chart labels it "total",
+  "avg", "max" or "min". Samples first collapse to one value per day, then
   W/M buckets apply the same rule to the days that have data. Empty days are
   skipped, never counted as zero; an empty bucket is a gap.
 - **The current week/month is partial**: drawn faded, labelled "so far", never
@@ -57,6 +58,14 @@ The house standard for stats screens. New screens should use this rather than
   out of the window average.
 - **Control**: `PeriodPicker` in the navigation bar's principal slot, its
   selection persisted per screen with `@AppStorage`.
+- **Goal (optional)**: pass `goal: PeriodGoal(2.5)` (or
+  `PeriodGoal(2000, direction: .atMost)`). It draws a dashed goal line across
+  each bucket and tints each bar/point hit (`hitColor`, green) or miss
+  (`missColor`, orange). For a `.sum` metric the value is **per day** and
+  scales with the bucket (×7 for a week, × the month's length for a month).
+  For `.average` / `.max` / `.min` it's a level applied to every bucket. A
+  partial bucket is only tinted once its outcome is decided (an `.atLeast` sum
+  that's already reached the goal, say). The header adds "goal X · n/m hit".
 
 ```swift
 import SwCharts
@@ -89,8 +98,10 @@ Pieces, usable on their own:
 
 - `ChartPeriod` — `day/week/month`, with `short` ("D"), `bucketCount`,
   `component`, and header wording. `String` raw values, safe for `@AppStorage`.
-- `MetricAggregation` — `.sum` / `.average`, `label`, and `combine(_:)`
-  (`nil` for no data).
+- `MetricAggregation` — `.sum` / `.average` / `.max` / `.min`, `label`, and
+  `combine(_:)` (`nil` for no data).
+- `PeriodGoal` — `target(for:aggregation:calendar:)` (per-period scaling) and
+  `outcome(for:aggregation:calendar:)` (`.hit` / `.miss` / `nil`). Pure.
 - `DatedSample` — a raw `(date, value)` observation.
 - `PeriodBucketer` — pure: `buckets(for:period:aggregation:now:)` →
   `[PeriodBucket]` (`start..<end`, `value: Double?`, `isPartial`). Calendar

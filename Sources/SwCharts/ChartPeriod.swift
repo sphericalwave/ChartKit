@@ -69,15 +69,18 @@ public enum ChartPeriod: String, CaseIterable, Identifiable, Equatable, Sendable
 
 /// How a metric's samples combine into a bucket. Declared once per metric:
 /// `.sum` for things that accumulate (calories, reps, sessions, minutes),
-/// `.average` for levels (heart rate, score, %, weight).
+/// `.average` for levels (heart rate, score, %, weight), `.max` / `.min` for
+/// bests (heaviest set, peak or lowest heart rate).
 public enum MetricAggregation: String, CaseIterable, Equatable, Sendable {
-    case sum, average
+    case sum, average, max, min
 
-    /// Chart label: "total" or "avg".
+    /// Chart label: "total", "avg", "max" or "min".
     public var label: String {
         switch self {
         case .sum:     return "total"
         case .average: return "avg"
+        case .max:     return "max"
+        case .min:     return "min"
         }
     }
 
@@ -85,10 +88,11 @@ public enum MetricAggregation: String, CaseIterable, Equatable, Sendable {
     /// not the same as zero.
     public func combine(_ values: [Double]) -> Double? {
         guard !values.isEmpty else { return nil }
-        let total = values.reduce(0, +)
         switch self {
-        case .sum:     return total
-        case .average: return total / Double(values.count)
+        case .sum:     return values.reduce(0, +)
+        case .average: return values.reduce(0, +) / Double(values.count)
+        case .max:     return values.max()
+        case .min:     return values.min()
         }
     }
 }

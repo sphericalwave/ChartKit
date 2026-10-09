@@ -15,7 +15,9 @@ mean/stddev.
 | `NetPeriodBarChart` | ![NetPeriodBarChart](Docs/img/net-period-bar-chart.png) |
 | `NormalDistributionChart` | ![NormalDistributionChart](Docs/img/normal-distribution-chart.png) |
 | `PeriodBarChart` | ![PeriodBarChart](Docs/img/period-bar-chart.png) |
+| `PeriodChartView` | ![PeriodChartView](Docs/img/period-chart-view.png) |
 | `PeriodGoalBarChart` | ![PeriodGoalBarChart](Docs/img/period-goal-bar-chart.png) |
+| `PeriodPicker` | ![PeriodPicker](Docs/img/period-picker.png) |
 | `SlopeColoredLineChart` | ![SlopeColoredLineChart](Docs/img/slope-colored-line-chart.png) |
 | `SlopeColoredSeriesChart` | ![SlopeColoredSeriesChart](Docs/img/slope-colored-series-chart.png) |
 <!-- SCREENSHOTS:END -->
@@ -30,6 +32,76 @@ mean/stddev.
 ```swift
 .package(url: "https://github.com/sphericalwave/SwCharts.git", branch: "main")
 ```
+
+## Standard Day/Week/Month charts
+
+The house standard for stats screens. New screens should use this rather than
+`PeriodBarChart`'s hour…year scales.
+
+| Period | Window | Bucket |
+| --- | --- | --- |
+| `D` | last 28 days | one point per local day |
+| `W` | last 12 weeks | Monday-start weeks, local time |
+| `M` | last 12 months | calendar months |
+
+- **Aggregation is per metric.** Declare `MetricAggregation.sum` (calories,
+  reps, sessions, minutes) or `.average` (HR, score, %, weight) once; the chart
+  labels it "total" or "avg". Samples first collapse to one value per day, then
+  W/M buckets apply the same rule to the days that have data. Empty days are
+  skipped, never counted as zero; an empty bucket is a gap.
+- **The current week/month is partial**: drawn faded, labelled "so far", never
+  projected.
+- **Header**: average over the visible window, plus the latest period's value
+  with % change vs the previous period. A partial `.sum` bucket shows no %
+  change (a running total vs a finished one isn't like-for-like) and is left
+  out of the window average.
+- **Control**: `PeriodPicker` in the navigation bar's principal slot, its
+  selection persisted per screen with `@AppStorage`.
+
+```swift
+import SwCharts
+
+struct NutritionStatsView: View {
+    @AppStorage("nutritionChartPeriod") private var period: ChartPeriod = .week
+    let calorieSamples: [DatedSample]   // one per meal, any number per day
+    let weightSamples: [DatedSample]
+
+    var body: some View {
+        Form {
+            Section {
+                PeriodChartView(title: "Calories", samples: calorieSamples,
+                                period: period, aggregation: .sum, style: .bar)
+            }
+            Section {
+                PeriodChartView(title: "Weight", samples: weightSamples,
+                                period: period, aggregation: .average,
+                                risingColor: .orange, fallingColor: .green)
+            }
+        }
+        .toolbar {
+            ToolbarItem(placement: .principal) { PeriodPicker(selection: $period) }
+        }
+    }
+}
+```
+
+Pieces, usable on their own:
+
+- `ChartPeriod` — `day/week/month`, with `short` ("D"), `bucketCount`,
+  `component`, and header wording. `String` raw values, safe for `@AppStorage`.
+- `MetricAggregation` — `.sum` / `.average`, `label`, and `combine(_:)`
+  (`nil` for no data).
+- `DatedSample` — a raw `(date, value)` observation.
+- `PeriodBucketer` — pure: `buckets(for:period:aggregation:now:)` →
+  `[PeriodBucket]` (`start..<end`, `value: Double?`, `isPartial`). Calendar
+  and "now" are injected; `PeriodBucketer.standardCalendar(timeZone:)` is the
+  Monday-first Gregorian calendar it uses by default. DST-safe.
+- `PeriodSummary` — `windowAverage`, `latest`, `previous`, `percentChange`.
+- `PeriodChartView` — the chart: `.line` (trend-colored like
+  `SlopeColoredLineChart`, padded y-axis — for levels) or `.bar` (zero-based —
+  for totals), a dashed window-average rule, and drag-to-read: slide across the
+  chart and the header shows the bucket under the finger.
+- `PeriodPicker` — the D/W/M segmented control.
 
 ## Overview
 

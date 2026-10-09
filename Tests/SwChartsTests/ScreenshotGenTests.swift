@@ -44,7 +44,16 @@ final class ScreenshotGenTests: XCTestCase {
                      yAxisLabel: { String(format: "%d:%02d", Int($0) / 60, Int($0) % 60) },
                      risingColor: .green, fallingColor: .orange)
              } })),
-            ("CalendarHeatmap", CGSize(width: 390, height: 140),
+            ("PeriodChartView", CGSize(width: 390, height: 280),
+             AnyView(Form { Section {
+                 PeriodChartView(title: "Weight", samples: SwChartsSamples.dailyWeight,
+                                 period: .week, aggregation: .average,
+                                 risingColor: .orange, fallingColor: .green,
+                                 now: SwChartsSamples.now)
+             } })),
+            ("PeriodPicker", CGSize(width: 390, height: 60),
+             AnyView(PeriodPicker(selection: .constant(.week)).padding())),
+            ("CalendarHeatmap",CGSize(width: 390, height: 140),
              AnyView(Form { Section {
                  CalendarHeatmap(weeks: 17, today: Date(timeIntervalSince1970: 1_700_000_000), scrollable: false) { day in
                      day.hashValue % 3 == 0 ? 0.85 : 0.08

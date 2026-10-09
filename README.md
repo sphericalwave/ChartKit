@@ -1,7 +1,7 @@
 # SwCharts
 
-> Formerly **ChartKit**. A deprecated `ChartKit` product still re-exports
-> SwCharts during the migration; switch to `import SwCharts`.
+> Formerly **ChartKit** (renamed 2026-10). Import `SwCharts`; the old
+> `ChartKit` product has been removed.
 
 Ready-made Swift Charts presentations for SwiftUI stats screens: a
 day/week/month/quarter/year bar chart with a segmented picker, a goal-tracking

@@ -1,4 +1,7 @@
-# ChartKit
+# SwCharts
+
+> Formerly **ChartKit**. A deprecated `ChartKit` product still re-exports
+> SwCharts during the migration; switch to `import SwCharts`.
 
 Ready-made Swift Charts presentations for SwiftUI stats screens: a
 day/week/month/quarter/year bar chart with a segmented picker, a goal-tracking
@@ -25,7 +28,7 @@ mean/stddev.
 ## Installation
 
 ```swift
-.package(url: "https://github.com/sphericalwave/ChartKit.git", branch: "main")
+.package(url: "https://github.com/sphericalwave/SwCharts.git", branch: "main")
 ```
 
 ## Overview
@@ -76,7 +79,7 @@ Both chart views are meant to be used directly as children of a SwiftUI
 `Form`:
 
 ```swift
-import ChartKit
+import SwCharts
 
 @AppStorage("statsScale") private var scale: ChartTimeframe = .week
 

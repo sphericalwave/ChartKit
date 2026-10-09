@@ -4,7 +4,7 @@ import Foundation
 /// Shared sample data for `#Preview` blocks and the README screenshot
 /// generator (`ScreenshotGenTests`), so both render the same content.
 /// DEBUG-only: never compiled into release builds of the library.
-enum ChartKitSamples {
+enum SwChartsSamples {
     private static let reference = Date(timeIntervalSince1970: 1_700_000_000)
 
     private static func series(_ values: [Double], step: Calendar.Component) -> [ChartPoint] {

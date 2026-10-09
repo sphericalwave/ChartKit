@@ -1,7 +1,7 @@
 import XCTest
-@testable import ChartKit
+@testable import SwCharts
 
-final class ChartKitTests: XCTestCase {
+final class SwChartsTests: XCTestCase {
 
     // MARK: - ChartTimeframe
 

@@ -2,13 +2,17 @@
 import PackageDescription
 
 let package = Package(
-    name: "ChartKit",
+    name: "SwCharts",
     platforms: [.iOS(.v17), .macOS(.v14)],
     products: [
+        .library(name: "SwCharts", targets: ["SwCharts"]),
+        // Deprecated compatibility product: re-exports SwCharts under the old
+        // name. Remove once every app imports SwCharts.
         .library(name: "ChartKit", targets: ["ChartKit"]),
     ],
     targets: [
-        .target(name: "ChartKit"),
-        .testTarget(name: "ChartKitTests", dependencies: ["ChartKit"]),
+        .target(name: "SwCharts"),
+        .target(name: "ChartKit", dependencies: ["SwCharts"]),
+        .testTarget(name: "SwChartsTests", dependencies: ["SwCharts"]),
     ]
 )

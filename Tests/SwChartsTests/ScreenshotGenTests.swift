@@ -2,7 +2,7 @@ import XCTest
 import SwiftUI
 import ImageIO
 import UniformTypeIdentifiers
-@testable import ChartKit
+@testable import SwCharts
 
 /// Renders one screenshot per public view into `Docs/img/` and keeps the
 /// README's `<!-- SCREENSHOTS -->` table in sync. The rendering step only runs
@@ -19,20 +19,20 @@ final class ScreenshotGenTests: XCTestCase {
             ("NormalDistributionChart", CGSize(width: 390, height: 320),
              AnyView(Form { NormalDistributionChart(mean: 72, stddev: 8, count: 240) })),
             ("PeriodBarChart", CGSize(width: 390, height: 380),
-             AnyView(Form { PeriodBarChart(data: ChartKitSamples.weightData, selection: .constant(.week)) })),
+             AnyView(Form { PeriodBarChart(data: SwChartsSamples.weightData, selection: .constant(.week)) })),
             ("PeriodGoalBarChart", CGSize(width: 390, height: 380),
              AnyView(Form { Section {
-                 PeriodGoalBarChart(data: ChartKitSamples.weightData, selection: .constant(.month),
+                 PeriodGoalBarChart(data: SwChartsSamples.weightData, selection: .constant(.month),
                                     goal: 178, title: "Weight (lbs)", barColor: .green)
              } })),
             ("NetPeriodBarChart", CGSize(width: 390, height: 380),
              AnyView(Form { Section {
-                 NetPeriodBarChart(data: ChartKitSamples.netCalorieData, selection: .constant(.week),
+                 NetPeriodBarChart(data: SwChartsSamples.netCalorieData, selection: .constant(.week),
                                    title: "Net Calories")
              } })),
             ("SlopeColoredLineChart", CGSize(width: 390, height: 220),
              AnyView(Form { Section {
-                 SlopeColoredLineChart(points: ChartKitSamples.weekly, yDomain: 178...183,
+                 SlopeColoredLineChart(points: SwChartsSamples.weekly, yDomain: 178...183,
                                        yAxisLabel: { String(format: "%.1f", $0) })
              } })),
             ("SlopeColoredSeriesChart", CGSize(width: 390, height: 220),
@@ -127,7 +127,7 @@ final class ScreenshotGenTests: XCTestCase {
     // MARK: Source scan
 
     static let packageRoot = URL(fileURLWithPath: #filePath)
-        .deletingLastPathComponent()   // ChartKitTests
+        .deletingLastPathComponent()   // SwChartsTests
         .deletingLastPathComponent()   // Tests
         .deletingLastPathComponent()   // package root
 

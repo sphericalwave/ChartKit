@@ -129,7 +129,7 @@ public struct SlopeColoredLineChart: View {
 #if DEBUG
 #Preview("SlopeColoredLineChart") {
     SlopeColoredLineChart(
-        points: ChartKitSamples.weekly,
+        points: SwChartsSamples.weekly,
         yDomain: 178...183,
         yAxisLabel: { String(format: "%.1f", $0) }
     )

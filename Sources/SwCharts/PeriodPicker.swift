@@ -13,6 +13,10 @@ import SwiftUI
 public struct PeriodPicker: View {
     @Binding private var selection: ChartPeriod
 
+    /// Three 72pt segments. Public so app-side variants (e.g. a picker that
+    /// gates periods) can match it.
+    public static let width: CGFloat = 216
+
     public init(selection: Binding<ChartPeriod>) {
         self._selection = selection
     }
@@ -26,7 +30,12 @@ public struct PeriodPicker: View {
             }
         }
         .pickerStyle(.segmented)
-        .fixedSize()
+        // Wide, tall segments: shrink-wrapped to "D"/"W"/"M" each target is
+        // barely wider than its letter. 72pt a segment clears the 44pt
+        // minimum with room to spare and still fits the principal slot
+        // beside a trailing toolbar button.
+        .controlSize(.large)
+        .frame(width: Self.width)
     }
 }
 

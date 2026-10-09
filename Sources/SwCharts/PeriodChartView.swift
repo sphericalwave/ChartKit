@@ -259,16 +259,16 @@ public struct PeriodChartView: View {
 
     @ChartContentBuilder
     private var barMarks: some ChartContent {
-        let floor = yDomain.lowerBound < 0 ? yDomain.lowerBound : 0
         ForEach(plotted) { entry in
             let isSelected = entry.bucket.id == selectedBucket?.id
             let inset = entry.bucket.end.timeIntervalSince(entry.bucket.start) * 0.15
             // RectangleMark: BarMark has no form taking both an x range
-            // (exact Monday-to-Monday edges) and a y range.
+            // (exact Monday-to-Monday edges) and a y range. Bars grow from
+            // zero, so a negative total hangs down from it.
             RectangleMark(
                 xStart: .value("Start", entry.bucket.start.addingTimeInterval(inset)),
                 xEnd: .value("End", entry.bucket.end.addingTimeInterval(-inset)),
-                yStart: .value("Floor", floor),
+                yStart: .value("Zero", 0),
                 yEnd: .value("Value", entry.point.value)
             )
             .foregroundStyle((isSelected ? Color.primary : fillColor(for: entry.bucket)).opacity(entry.bucket.isPartial ? 0.35 : 1))

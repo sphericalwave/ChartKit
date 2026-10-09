@@ -294,5 +294,8 @@ final class PeriodChartViewHelperTests: XCTestCase {
         check([50, 100], 0, 115)
         check([], 0, 1.15)
         check([-20, 80], -20, 95)
+        // All-negative (net calories in deficit): zero stays in the domain
+        // because bars hang from it.
+        check([-4000, -1000], -4000, 600)
     }
 }
